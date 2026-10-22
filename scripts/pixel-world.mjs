@@ -13,6 +13,7 @@
  *
  *   GITHUB_TOKEN=xxx node scripts/pixel-world.mjs --user Shelbythx --out profile/pixel-world.svg
  *   node scripts/pixel-world.mjs --demo --out preview.svg      # випадкові дані, токен не потрібен
+ *   --min-fill 0.45   # добити порожні місця ігровими блоками до 45% заповнення (0 = тільки реальні)
  */
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -26,6 +27,9 @@ const opt = (name, def) => {
 const DEMO = argv.includes('--demo');
 const USER = opt('user', process.env.GITHUB_USER || process.env.GITHUB_REPOSITORY_OWNER || 'player');
 const OUT = opt('out', 'profile/pixel-world.svg');
+// Мінімальна частка заповнених клітинок (0…0.9). Якщо реальних контрибуцій менше,
+// порожні місця добиваються ігровими блоками. 0 = тільки реальні контрибуції.
+const MIN_FILL = Math.min(0.9, Math.max(0, parseFloat(opt('min-fill', '0')) || 0));
 const TOKEN = process.env.GITHUB_TOKEN;
 
 // ───────────────────────── Дані ─────────────────────────
@@ -79,6 +83,24 @@ function demoCalendar(rand) {
     weeks.push(days);
   }
   return { total, weeks };
+}
+
+/** Добиває порожні клітинки ігровими блоками до частки minFill. Реальні контрибуції не змінюються. */
+function addBonusBlocks(data, minFill, rand) {
+  const empty = [];
+  let all = 0, filled = 0;
+  data.weeks.forEach((days) => days.forEach((d) => { all++; if (d.level > 0) filled++; else empty.push(d); }));
+  for (let i = empty.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [empty[i], empty[j]] = [empty[j], empty[i]];
+  }
+  const need = Math.max(0, Math.round(all * minFill) - filled);
+  empty.slice(0, need).forEach((d) => {
+    const r = rand();
+    d.level = r < 0.4 ? 1 : r < 0.7 ? 2 : r < 0.9 ? 3 : 4;
+    d.bonus = true;
+  });
+  return need;
 }
 
 // ───────────────────────── Піксельний шрифт 5×7 ─────────────────────────
@@ -169,7 +191,7 @@ const C = {
 };
 
 // ───────────────────────── Генерація ─────────────────────────
-function render({ weeks, total }, login, seed) {
+function render({ weeks }, login, seed) {
   const rand = mulberry32(seed);
   const T = 24; // довжина циклу, с
   const n = weeks.length;
@@ -227,6 +249,9 @@ function render({ weeks, total }, login, seed) {
 
   // ── HUD ──
   const name = login.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12) || 'PLAYER';
+  // Очки: кожен блок дає 10 × рівень, HI — максимум за рівень
+  const points = (days) => days.reduce((a, d) => a + d.level * 10, 0);
+  const total = weeks.reduce((a, days) => a + points(days), 0);
   const digits = Math.max(5, String(total).length);
   const pad = (v) => String(v).padStart(digits, '0');
   add(`<path d="${textPath('1UP', 24, 14, 2)}" fill="${C.mag}"/>`);
@@ -246,8 +271,8 @@ function render({ weeks, total }, login, seed) {
   const hits = []; // {c, t, sum}
   let sum = 0;
   weeks.forEach((days, c) => {
-    const cnt = days.reduce((a, d) => a + d.count, 0);
-    if (cnt > 0) { sum += cnt; hits.push({ c, t: hitT(c), sum }); }
+    const pts = points(days);
+    if (pts > 0) { sum += pts; hits.push({ c, t: hitT(c), sum }); }
   });
   const states = [{ t: 0, sum: 0 }, ...hits];
   const digitDefs = [...'0123456789'].map((ch) => `<path id="g${ch}" d="${gridPath(FONT[ch], 0, 0, 2)}"/>`).join('');
@@ -419,7 +444,8 @@ else if (!TOKEN) {
   process.exit(1);
 } else data = await fetchCalendar(USER, TOKEN);
 
+const bonus = addBonusBlocks(data, MIN_FILL, mulberry32(seed ^ 0x9e3779b9));
 const svg = render(data, USER, seed);
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, svg);
-console.log(`✔ ${OUT}: ${data.weeks.length} тижнів, ${data.total} контрибуцій, ${(svg.length / 1024).toFixed(1)} KB`);
+console.log(`✔ ${OUT}: ${data.weeks.length} тижнів, ${data.total} контрибуцій, +${bonus} ігрових блоків, ${(svg.length / 1024).toFixed(1)} KB`);

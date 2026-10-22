@@ -20,7 +20,7 @@ jobs:
 
       # Піксельний світ з твого графіка контрибуцій (замість змійки)
       - name: Generate pixel world
-        run: node scripts/pixel-world.mjs --user "${{ github.repository_owner }}" --out profile/pixel-world.svg
+        run: node scripts/pixel-world.mjs --user "${{ github.repository_owner }}" --out profile/pixel-world.svg --min-fill 0.45
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
