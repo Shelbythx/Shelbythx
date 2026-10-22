@@ -1,6 +1,6 @@
 <!-- ============ HEADER: хвиля + анімований текст ============ -->
 <p align="center">
-  <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:00ADD8,100:BC52EE&height=180&section=header&text=Shelby&fontSize=60&fontColor=ffffff&fontAlignY=35&animation=fadeIn&desc=Svyatoslav%20Maliuga%20%7C%20JS%20Developer%20%7C%20UI%20Designer&descSize=18&descAlignY=58" alt="header" />
+  <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:00ADD8,100:BC52EE&height=180&section=header&text=Shelby&fontSize=60&fontColor=ffffff&fontAlignY=35&animation=fadeIn&desc=Svyatoslav%20Maliuga%20%7C%20WEB%20developer&descSize=18&descAlignY=58" alt="header" />
 </p>
 
 <!-- ============ TYPING: друкований текст ============ -->
@@ -18,12 +18,6 @@
   <img src="https://skillicons.dev/icons?i=js,ts,nodejs,c&theme=dark" alt="languages" />
   <br/>
   <img src="https://skillicons.dev/icons?i=react,html,css,tailwind,figma,git&theme=dark" alt="tools" />
-</p>
-
-<!-- ============ STATS: теж генеруються Action'ом у папку profile/ ============ -->
-<p align="center">
-  <img height="170" src="./profile/stats.svg" alt="GitHub stats" />
-  <img height="170" src="./profile/top-langs.svg" alt="Top languages" />
 </p>
 
 <!-- ============ CONTACTS ============ -->
